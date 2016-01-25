@@ -1,9 +1,4 @@
----
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document: 
-    keep_md: yes
----
+# Reproducible Research: Peer Assessment 1
 echo = true
 
 ##Loading and preprocessing the data
@@ -13,13 +8,15 @@ echo = true
 
 Read file into environment
 
-```{r}
+
+```r
 data <- read.csv(unzip('activity.zip'))
 ```
 
 Create dataframe of total steps each day
 
-```{r}
+
+```r
 daily <- data.frame(rowsum(data$steps, data$date))
 names(daily) <- c('steps')
 ```
@@ -32,18 +29,31 @@ names(daily) <- c('steps')
 
 
 Produce histogram of dataframe for each day activity.
-```{r}
+
+```r
 hist(daily$steps, main = "Histogram of Steps", xlab = "Steps")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-3-1.png)
+
 Calculate daily mean steps
-```{r}
+
+```r
 mean(daily$steps, na.rm = TRUE)
 ```
 
+```
+## [1] 10766.19
+```
+
 Calculate daily median steps
-```{r}
+
+```r
 median(daily$steps, na.rm = TRUE)
+```
+
+```
+## [1] 10765
 ```
 
 
@@ -54,7 +64,8 @@ median(daily$steps, na.rm = TRUE)
 
 **Aggregate average internal steps in a DataFrame**
 
-```{r}
+
+```r
 interval.mean <- aggregate(data$steps, list(data$interval), mean, na.rm = TRUE)
 names(interval.mean) <- c('interval', 'mean.steps')
 ```
@@ -62,16 +73,25 @@ names(interval.mean) <- c('interval', 'mean.steps')
 
 **Plot average steps per interval across all days**
 
-```{r}
+
+```r
 plot(x=interval.mean$interval, y=interval.mean$mean.steps, type = 'l', 
      xlab = "Minute Time Interval", ylab = "Average Steps")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png)
+
 
 **Find the maximum average interval**
 
-```{r}
+
+```r
 interval.mean[which.max(interval.mean$mean.steps),]
+```
+
+```
+##     interval mean.steps
+## 104      835   206.1698
 ```
 
 ##Imputing missing values
@@ -82,15 +102,21 @@ interval.mean[which.max(interval.mean$mean.steps),]
 
 **Calculate the number of NA records**
 
-```{r}
+
+```r
 sum(is.na(data$steps))
+```
+
+```
+## [1] 2304
 ```
 
 **Strategy for filling in missing values**
 Using Interval Mean to fill in missing data.
 
 **Create dataset that with imputed numbers for missing data.**
-```{r}
+
+```r
 imputted.data <- data 
 for (i in 1:nrow(imputted.data)) {
     if (is.na(imputted.data$steps[i])) {
@@ -103,32 +129,55 @@ names(imputted.daily) <- c('steps')
 ```
 
 Produce histogram of imputted dataframe for each day activity.
-```{r}
+
+```r
 hist(imputted.daily$steps, main = "Histogram of Steps", xlab = "Steps")
 ```
 
+![](PA1_template_files/figure-html/unnamed-chunk-11-1.png)
+
 Calculate imputted daily mean steps
-```{r}
+
+```r
 mean(imputted.daily$steps)
 ```
 
+```
+## [1] 10766.19
+```
+
 Calculate imputted daily median steps
-```{r}
+
+```r
 median(imputted.daily$steps)
+```
+
+```
+## [1] 10766.19
 ```
 
 Difference between Mean with imputted values for missing data and excluding missing data in the orignal calculation.
 
-```{r}
+
+```r
 mean(daily$steps, na.rm = TRUE) - 
      mean(imputted.daily$steps)
 ```
 
+```
+## [1] 0
+```
+
 Difference between median with imputted values for missing data and excluding missing data in the orignal calculation.
 
-```{r}
+
+```r
 median(daily$steps, na.rm = TRUE) - 
      median(imputted.daily$steps)
+```
+
+```
+## [1] -1.188679
 ```
 
 
@@ -138,7 +187,8 @@ median(daily$steps, na.rm = TRUE) -
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
 
 **Add new variable "weekday" based on weekend or weekday from date.**
-```{r}
+
+```r
 imputted.data$date <- as.Date(imputted.data$date, "%Y-%m-%d")
 imputted.data$weekday <- weekdays(imputted.data$date, abbreviate=TRUE)
 
@@ -155,9 +205,20 @@ imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Sun","weekend")
 head(imputted.data)
 ```
 
+```
+##       steps       date interval weekday
+## 1 1.7169811 2012-10-01        0 weekday
+## 2 0.3396226 2012-10-01        5 weekday
+## 3 0.1320755 2012-10-01       10 weekday
+## 4 0.1509434 2012-10-01       15 weekday
+## 5 0.0754717 2012-10-01       20 weekday
+## 6 2.0943396 2012-10-01       25 weekday
+```
+
 
 **Plot Time Series of average number of steps taken.**
-```{r}
+
+```r
 mean.Steps <- aggregate(imputted.data$steps, 
                       list(interval = as.numeric(as.character(imputted.data$interval)), 
                            weekdays = imputted.data$weekday),
@@ -168,3 +229,5 @@ xyplot(mean.Steps$meanOfSteps ~ mean.Steps$interval | mean.Steps$weekdays,
        layout = c(1, 2), type = "l", 
        xlab = "Interval", ylab = "Number of steps")
 ```
+
+![](PA1_template_files/figure-html/unnamed-chunk-17-1.png)
