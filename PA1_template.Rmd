@@ -3,8 +3,6 @@ title: "Reproducible Research: Peer Assessment 1"
 output: html_document
 ---
 echo = true
-library(Hmisc)
-library(impute)
 
 ##Loading and preprocessing the data
 
@@ -14,7 +12,7 @@ library(impute)
 Read file into environment
 
 ```{r}
-data <- read.csv(unzip('repdata-data-activity.zip'))
+data <- read.csv(unzip('activity.zip'))
 ```
 
 Create dataframe of total steps each day
@@ -76,9 +74,9 @@ interval.mean[which.max(interval.mean$mean.steps),]
 
 ##Imputing missing values
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs) 
-2. Devise a strategy for ???lling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc. 
-3. Create a new dataset that is equal to the original dataset but with the missing data ???lled in. 
-4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values di???er from the estimates from the ???rst part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
+2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc. 
+3. Create a new dataset that is equal to the original dataset but with the missing data filled in. 
+4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps
 
 **Calculate the number of NA records**
 
@@ -94,7 +92,7 @@ Using Interval Mean to fill in missing data.
 imputted.data <- data 
 for (i in 1:nrow(imputted.data)) {
     if (is.na(imputted.data$steps[i])) {
-        imputted.data$steps[i] <- avgSteps[which(imputted.data$interval[i] == avgSteps$interval), ]$meanOfSteps
+        imputted.data$steps[i] <- interval.mean[which(imputted.data$interval[i] == interval.mean$interval), ]$mean.steps
     }
 }
 
@@ -102,11 +100,69 @@ imputted.daily <- data.frame(rowsum(imputted.data$steps, imputted.data$date))
 names(imputted.daily) <- c('steps')
 ```
 
+Produce histogram of imputted dataframe for each day activity.
+```{r}
+hist(imputted.daily$steps, main = "Histogram of Steps", xlab = "Steps")
+```
+
+Calculate imputted daily mean steps
+```{r}
+mean(imputted.daily$steps)
+```
+
+Calculate imputted daily median steps
+```{r}
+median(imputted.daily$steps)
+```
+
+Difference between Mean with imputted values for missing data and excluding missing data in the orignal calculation.
+
+```{r}
+mean(daily$steps, na.rm = TRUE) - 
+     mean(imputted.daily$steps)
+```
+
+Difference between median with imputted values for missing data and excluding missing data in the orignal calculation.
+
+```{r}
+median(daily$steps, na.rm = TRUE) - 
+     median(imputted.daily$steps)
+```
+
 
 ##Are there differences in activity patterns between weekdays and weekends?
-For this part the weekdays() function may be of some help here. Use the dataset with the ???lled-in missing values for this part.
 
 1. Create a new factor variable in the dataset with two levels - "weekday" and "weekend" indicating whether a given date is a weekday or weekend day. 
 2. Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
 
-Your plot will look di???erent from the one above because you will be using the activity monitor data. Note that the above plot was made using the lattice system but you can make the same version of the plot using any plotting system you choose.
+**Add new variable "weekday" based on weekend or weekday from date.**
+```{r}
+imputted.data$date <- as.Date(imputted.data$date, "%Y-%m-%d")
+imputted.data$weekday <- weekdays(imputted.data$date, abbreviate=TRUE)
+
+library(stringr)
+
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Mon","weekday")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Tue","weekday")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Wed","weekday")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Thu","weekday")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Fri","weekday")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Sat","weekend")
+imputted.data$weekday <- str_replace_all(imputted.data$weekday, "Sun","weekend")
+
+head(imputted.data)
+```
+
+
+**Plot Time Series of average number of steps taken.**
+```{r}
+mean.Steps <- aggregate(imputted.data$steps, 
+                      list(interval = as.numeric(as.character(imputted.data$interval)), 
+                           weekdays = imputted.data$weekday),
+                      FUN = "mean")
+names(mean.Steps)[3] <- "meanOfSteps"
+library(lattice)
+xyplot(mean.Steps$meanOfSteps ~ mean.Steps$interval | mean.Steps$weekdays, 
+       layout = c(1, 2), type = "l", 
+       xlab = "Interval", ylab = "Number of steps")
+```
